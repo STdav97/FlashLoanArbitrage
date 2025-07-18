@@ -17,6 +17,10 @@ def get_price(pool_api, tokenA, tokenB):
     """ % (tokenA.lower(), tokenB.lower())
     resp = requests.post(pool_api, json={'query': query})
     data = resp.json()
+    # ---------- AJOUT DE LA VERIFICATION ----------
+    if 'data' not in data or 'pairs' not in data['data']:
+        print("Réponse API inattendue:", data)  # Pour debug
+        return None, None
     pairs = data['data']['pairs']
     if not pairs:
         return None, None
