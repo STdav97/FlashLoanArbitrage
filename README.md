@@ -11,4 +11,4 @@ Bot Telegram qui surveille en temps réel l'arbitrage entre Uniswap v3 et Sushis
 2. Installe les dépendances :
    pip install -r requirements.txt
 3. Lance le bot :
-   python tg_bot.py
+   main.py
