@@ -1,3 +1,3 @@
 import os
-TELEGRAM_TOKEN = os.getenv("T8087230342:AAESHs4dFxIl-iD6wMTOLKXBkQQrkmoSLRo")
-print("TELEGRAM_TOKEN:", repr(1427545674))  # Debug ici
+TELEGRAM_TOKEN = os.getenv("1427545674")
+print("TELEGRAM_TOKEN:", repr(T8087230342:AAESHs4dFxIl-iD6wMTOLKXBkQQrkmoSLRo))  # Debug ici
