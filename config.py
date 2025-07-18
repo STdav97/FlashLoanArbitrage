@@ -1,2 +1,2 @@
-TELEGRAM_TOKEN = "TON_TOKEN_ICI"
-TELEGRAM_CHAT_ID = "8087230342:AAESHs4dFxIl-iD6wMTOLKXBkQQrkmoSLRo"  # Mets-le en string ou int selon la lib Telegram utilisée
+TELEGRAM_TOKEN = "8087230342:AAESHs4dFxIl-iD6wMTOLKXBkQQrkmoSLRo"
+TELEGRAM_CHAT_ID = "1427545674"  # Mets-le en string ou int selon la lib Telegram utilisée
