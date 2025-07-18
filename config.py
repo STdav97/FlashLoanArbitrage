@@ -1,2 +1,4 @@
-TELEGRAM_TOKEN = ""
-TELEGRAM_CHAT_ID = ""  # Mets-le en string ou int selon la lib Telegram utilisée
+import os
+
+TELEGRAM_TOKEN = os.getenv("8087230342:AAESHs4dFxIl-iD6wMTOLKXBkQQrkmoSLRo")
+TELEGRAM_CHAT_ID = os.getenv("1427545674")
