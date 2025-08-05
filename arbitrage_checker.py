@@ -1,47 +1,75 @@
-import requests
+import requests, asyncio
+from aiogram import Bot
 
-USDC = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
-WETH = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+bot = Bot(token="TON_TELEGRAM_TOKEN_ICI")
+chat_id = "TON_CHAT_ID_ICI"
 
-uniswap_api = "https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-dev"
-sushiswap_api = "https://api.thegraph.com/subgraphs/name/sushiswap/arbitrum-exchange"
+# Pools à vérifier sur Arbitrum
+DEXS = {
+    "UniswapV3": "https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-minimal",
+    "SushiSwap": "https://api.thegraph.com/subgraphs/name/sushiswap/arbitrum-exchange",
+    "Camelot": "https://api.thegraph.com/subgraphs/name/camelotlabs/camelot-amm",
+}
+
+TOKENS = {
+    "USDC": "0xff970a61a04b1ca14834a43f5de4533ebdbb5cc8",
+    "WETH": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+}
+
+async def send_alert(msg):
+    await bot.send_message(chat_id, msg, parse_mode="Markdown")
 
 def get_price(pool_api, tokenA, tokenB):
     query = """
     {
-      pairs(where: {token0: "%s", token1: "%s"}) {
+      pairs(where:{
+        token0_in:["%s","%s"],
+        token1_in:["%s","%s"]
+      }) {
+        token0 { symbol }
+        token1 { symbol }
         token0Price
         token1Price
       }
     }
-    """ % (tokenA.lower(), tokenB.lower())
+    """ % (tokenA.lower(), tokenB.lower(), tokenA.lower(), tokenB.lower())
     resp = requests.post(pool_api, json={'query': query})
+    if resp.status_code != 200:
+        return None
     data = resp.json()
-    # ---------- AJOUT DE LA VERIFICATION ----------
-    if 'data' not in data or 'pairs' not in data['data']:
-        print("Réponse API inattendue:", data)  # Pour debug
-        return None, None
-    pairs = data['data']['pairs']
-    if not pairs:
-        return None, None
-    return float(pairs[0]['token0Price']), float(pairs[0]['token1Price'])
+    pairs = data.get('data', {}).get('pairs', [])
+    for pair in pairs:
+        symbols = (pair["token0"]["symbol"], pair["token1"]["symbol"])
+        if "USDC" in symbols and "WETH" in symbols:
+            return float(pair["token0Price"])
+    return None
 
-def check_arbitrage():
-    try:
-        uni0, uni1 = get_price(uniswap_api, USDC, WETH)
-        sushi0, sushi1 = get_price(sushiswap_api, USDC, WETH)
-        if None in [uni0, uni1, sushi0, sushi1]:
-            return "❌ Pool non trouvé ou données indisponibles."
-        msg = (
-            f"Uniswap USDC/ETH: {uni0:.6f}\n"
-            f"SushiSwap USDC/ETH: {sushi0:.6f}\n"
-        )
-        if uni0 > sushi0 * 1.002:
-            msg += "🚨 ARBITRAGE: Vendre sur Uniswap, Acheter sur SushiSwap !"
-        elif sushi0 > uni0 * 1.002:
-            msg += "🚨 ARBITRAGE: Vendre sur SushiSwap, Acheter sur Uniswap !"
-        else:
-            msg += "Aucune opportunité d'arbitrage."
-        return msg
-    except Exception as e:
-        return f"Erreur: {e}"
+async def check_all_dexs():
+    prices = {}
+    for dex, api_url in DEXS.items():
+        price = get_price(api_url, TOKENS["USDC"], TOKENS["WETH"])
+        if price:
+            prices[dex] = price
+            print(f"{dex} USDC/WETH: {price:.6f}")
+
+    # Vérification arbitrage (écart supérieur à 0.3%)
+    for dex1, price1 in prices.items():
+        for dex2, price2 in prices.items():
+            if dex1 != dex2:
+                diff = abs(price1 - price2) / price2
+                if diff >= 0.003:  # >0.3% arbitrage
+                    msg = f"🚨 Arbitrage détecté:\n\n{dex1}: {price1:.6f}\n{dex2}: {price2:.6f}\nDifférence: {diff:.2%}"
+                    await send_alert(msg)
+                    return  # envoie une seule alerte à la fois
+
+async def main_loop():
+    while True:
+        try:
+            await check_all_dexs()
+        except Exception as e:
+            print("Erreur:", e)
+        await asyncio.sleep(30)  # Vérifie toutes les 30 secondes
+
+if __name__ == "__main__":
+    asyncio.run(main_loop())
+
